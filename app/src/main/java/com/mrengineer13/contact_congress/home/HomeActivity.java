@@ -3,24 +3,30 @@ package com.mrengineer13.contact_congress.home;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v13.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.SearchView;
+import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.mrengineer13.contact_congress.R;
 import com.mrengineer13.contact_congress.base.BaseActivity;
 import com.mrengineer13.contact_congress.data.models.events.LegislatorSearchEvent;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import butterknife.BindView;
 import pl.charmas.android.reactivelocation.ReactiveLocationProvider;
 
-import static com.mrengineer13.contact_congress.utils.DialogUtils.showZipCodeDialog;
 import static com.mrengineer13.contact_congress.utils.DialogUtils.showZipCodeErrorDialog;
 
 public class HomeActivity extends BaseActivity implements SearchView.OnQueryTextListener, HomeView {
@@ -84,7 +90,7 @@ public class HomeActivity extends BaseActivity implements SearchView.OnQueryText
 
                     presenter.getLocation();
                 } else {
-                    showZipCodeDialog(HomeActivity.this);
+                    showManuallyUpdateZipCodeDialog();
                 }
             }
         }
@@ -92,16 +98,54 @@ public class HomeActivity extends BaseActivity implements SearchView.OnQueryText
 
     @Override
     public void showZipErrorDialog() {
-        showZipCodeErrorDialog(HomeActivity.this);
+        showZipCodeErrorDialog(this);
     }
 
     @Override
-    public void gotPostalCode(String postalCode) {
+    public void getLegislatorsForPostalCode() {
+        presenter.getLegislators();
+    }
+
+    @Override
+    public void gotPostalCodeFromLocation(String postalCode) {
         Snackbar.make(findViewById(android.R.id.content), String.format("Your postal code: %s", postalCode), Snackbar.LENGTH_SHORT)
                 .setAction("Update", new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        showZipCodeDialog(HomeActivity.this);
+                        showManuallyUpdateZipCodeDialog();
+                    }
+                }).show();
+    }
+
+
+    private void showManuallyUpdateZipCodeDialog() {
+        new MaterialDialog.Builder(this)
+                .title("Enter postal code Manually.")
+                .content("Please enter your postal code")
+                .alwaysCallInputCallback()
+                .inputType(InputType.TYPE_CLASS_NUMBER)
+                .inputRangeRes(5, 5, android.R.color.holo_red_light)
+                .autoDismiss(false)
+                .onAny(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                        if (which == DialogAction.POSITIVE) {
+                            String zip = dialog.getInputEditText().getText().toString();
+                            prefs.saveZip(zip);
+                            HomeActivity.this.getLegislatorsForPostalCode();
+                            dialog.dismiss();
+                        }
+                    }
+                })
+                .input("", prefs.getZip(), new MaterialDialog.InputCallback() {
+                    @Override
+                    public void onInput(MaterialDialog dialog, CharSequence input) {
+                        dialog.getActionButton(DialogAction.POSITIVE).setEnabled(false);
+                        Pattern mPattern = Pattern.compile("\\d{5}?");
+                        Matcher matcher = mPattern.matcher(input.toString());
+                        if (matcher.matches()) {
+                            dialog.getActionButton(DialogAction.POSITIVE).setEnabled(true);
+                        }
                     }
                 }).show();
     }

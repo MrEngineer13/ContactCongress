@@ -64,7 +64,7 @@ public class HomePresenter {
                     public void call(List<Address> addresses) {
                         String postalCode = addresses.get(0).getPostalCode();
                         prefs.saveZip(postalCode);
-                        view.gotPostalCode(postalCode);
+                        view.gotPostalCodeFromLocation(postalCode);
                     }
                 }, new Action1<Throwable>() {
                     @Override
@@ -80,6 +80,23 @@ public class HomePresenter {
 
     public void getLegislators(Location location) {
         Subscription subscription = api.legislators(location.getLatitude(), location.getLongitude())
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new DataSubscription<LegislatorResults>(view, new DataSubscription.CompleteRequestCallback<LegislatorResults>() {
+                    @Override
+                    public void onSuccess(LegislatorResults legislatorResults) {
+                        for (final Legislator legislator : legislatorResults.legislators) {
+                            saveLegislators(legislator);
+                        }
+                    }
+                }));
+
+        subscriptions.add(subscription);
+    }
+
+    public void getLegislators() {
+        String zipCode = prefs.getZip();
+        Subscription subscription = api.legislators(zipCode)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new DataSubscription<LegislatorResults>(view, new DataSubscription.CompleteRequestCallback<LegislatorResults>() {
