@@ -1,0 +1,19 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="Postal code preferences">
+
+        <Preference
+            android:key="zip_preference"
+            android:title="Zip Code"
+            android:summary="Manually enter zip code" />
+
+        <Preference
+            android:key="sync_zip_preference"
+            android:title="Sync Zip"
+            android:summary="Use current location to refresh zip code" />
+
+    </PreferenceCategory>
+
+
+
+</PreferenceScreen>

@@ -1,0 +1,108 @@
+buildscript {
+    repositories {
+        maven { url 'https://maven.fabric.io/public' }
+    }
+
+    dependencies {
+        classpath 'io.fabric.tools:gradle:1.+'
+    }
+}
+apply plugin: 'com.android.application'
+apply plugin: 'io.fabric'
+
+repositories {
+    maven { url 'https://maven.fabric.io/public' }
+}
+
+apply plugin: 'com.neenbedankt.android-apt'
+apply plugin: 'realm-android'
+
+def API_KEY = '"' + API_KEY + '"' ?: '"Define Secret API Key"';
+
+
+android {
+    signingConfigs {
+        release {
+            storeFile file("${keystore}")
+            storePassword "${keystore_password}"
+            keyAlias "${key_alias}"
+            keyPassword "${key_password}"
+        }
+    }
+    compileSdkVersion 25
+    buildToolsVersion '25.0.0'
+    defaultConfig {
+        applicationId "com.mrengineer13.contact_congress"
+        minSdkVersion 15
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
+    }
+    buildTypes {
+        debug {
+            buildConfigField 'String', 'API_KEY', API_KEY
+        }
+
+        release {
+            buildConfigField 'String', 'API_KEY', API_KEY
+
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    // Design
+    compile 'com.android.support:appcompat-v7:25.0.0'
+    compile 'com.android.support:design:25.0.0'
+    compile 'com.android.support:support-v4:25.0.0'
+    compile 'com.android.support:support-v13:25.0.0'
+    compile 'com.android.support:cardview-v7:25.0.0'
+    compile 'com.android.support:recyclerview-v7:25.0.0'
+    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha3'
+    compile 'com.afollestad.material-dialogs:core:0.8.6.1'
+    compile 'de.hdodenhof:circleimageview:2.0.0'
+    compile 'konifar:fab-transformation:1.0.0'
+    compile 'io.realm:android-adapters:1.3.0'
+
+    //Location
+    compile 'pl.charmas.android:android-reactive-location:0.9@aar'
+    compile 'com.google.android.gms:play-services-location:9.2.0'
+
+    //Network & Json
+    compile 'com.squareup.retrofit2:retrofit:2.1.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.1.0'
+    compile 'com.squareup.retrofit2:adapter-rxjava:2.1.0'
+    compile 'com.squareup.picasso:picasso:2.5.2'
+
+    // Injection
+    compile 'javax.annotation:jsr250-api:1.0'
+    compile 'com.google.dagger:dagger:2.0'
+    apt 'com.google.dagger:dagger-compiler:2.0'
+    compile 'com.jakewharton:butterknife:8.2.1'
+    apt 'com.jakewharton:butterknife-compiler:8.2.1'
+
+    //Reactive
+    compile 'io.reactivex:rxandroid:1.2.0'
+    compile 'io.reactivex:rxjava:1.1.5'
+    compile 'com.trello:rxlifecycle:0.6.1'
+    compile 'com.trello:rxlifecycle-components:0.6.1'
+
+    compile 'com.jakewharton.timber:timber:3.1.0'
+
+    compile 'com.facebook.stetho:stetho:1.3.1'
+    compile 'com.uphyca:stetho_realm:0.9.0'
+
+    testCompile 'junit:junit:4.12'
+    compile('com.crashlytics.sdk.android:crashlytics:2.6.2@aar') {
+        transitive = true;
+    }
+}

@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Contact Congress</string>
+    <string name="action_settings">Settings</string>
+    <string name="tab_search">Search</string>
+    <string name="tab_settings">Settings</string>
+    <string name="tab_my_rep">My Representative</string>
+    <string name="server_error">Server Error</string>
+    <string name="retry">Try again later.</string>
+    <string name="network_error">Network Error</string>
+    <string name="network_error_msg">Please make sure you are connected to the internet.</string>
+
+    <string name="loading_message">Loading, please wait.</string>
+    <string name="title_activity_bill_details_actvity">BillDetailsActvity</string>
+    <string name="no_call">No one to call</string>
+    <string name="no_call_msg">Thanks for trying to show your support but there\'s no one to call. Try findng another bill so you can still make a difference.</string>
+</resources>
