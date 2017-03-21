@@ -9,6 +9,7 @@ import android.widget.TextView;
 import com.mrengineer13.contact_congress.R;
 import com.mrengineer13.contact_congress.data.models.Legislator;
 import com.mrengineer13.contact_congress.data.models.LegislatorPresenter;
+import com.mrengineer13.contact_congress.utils.LegislatorImageUtils;
 
 import java.util.List;
 
@@ -96,7 +97,7 @@ public class CongressSearchAdapter extends RecyclerView.Adapter<CongressSearchAd
 
             LegislatorPresenter presenter = new LegislatorPresenter(legislator);
             this.name.setText(presenter.getName());
-            presenter.loadLegislatorImage(sponsorAvatar);
+            LegislatorImageUtils.setImageView(legislator.bioguideId, LegislatorImageUtils.PIC_SMALL, sponsorAvatar.getContext(), sponsorAvatar);
         }
 
         @OnClick(R.id.action_call)
