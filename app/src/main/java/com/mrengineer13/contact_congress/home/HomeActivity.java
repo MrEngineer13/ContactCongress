@@ -1,13 +1,10 @@
 package com.mrengineer13.contact_congress.home;
 
 import android.Manifest;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.Snackbar;
-import android.support.v13.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.SearchView;
 import android.text.InputType;
@@ -25,10 +22,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import butterknife.BindView;
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.OnPermissionDenied;
+import permissions.dispatcher.RuntimePermissions;
 import pl.charmas.android.reactivelocation.ReactiveLocationProvider;
 
 import static com.mrengineer13.contact_congress.utils.DialogUtils.showZipCodeErrorDialog;
 
+@RuntimePermissions
 public class HomeActivity extends BaseActivity implements SearchView.OnQueryTextListener, HomeView {
 
     @BindView(R.id.bottom_navigation)
@@ -49,7 +50,7 @@ public class HomeActivity extends BaseActivity implements SearchView.OnQueryText
         bottomNavigationView.setOnNavigationItemSelectedListener(adapter);
 
         selectFirstNavItem();
-        checkPermissions();
+        HomeActivityPermissionsDispatcher.getLocationWithCheck(this);
     }
 
     @Override
@@ -63,37 +64,16 @@ public class HomeActivity extends BaseActivity implements SearchView.OnQueryText
         adapter.selectNavItem(firstItem);
     }
 
-    private void checkPermissions() {
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
-
-        } else {
-            if (!prefs.hasZip()) {
-                presenter.getLocation();
-            }
+    @NeedsPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+    void getLocation() {
+        if (!prefs.hasZip()) {
+            presenter.getLocation();
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                    presenter.getLocation();
-                } else {
-                    showManuallyUpdateZipCodeDialog();
-                }
-            }
-        }
+    @OnPermissionDenied(Manifest.permission.ACCESS_FINE_LOCATION)
+    void showDeniedForLocation() {
+        showManuallyUpdateZipCodeDialog();
     }
 
     @Override
@@ -177,4 +157,11 @@ public class HomeActivity extends BaseActivity implements SearchView.OnQueryText
     public boolean onQueryTextChange(String s) {
         return false;
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        HomeActivityPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
+    }
+
 }

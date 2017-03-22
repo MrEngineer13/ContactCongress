@@ -1,5 +1,6 @@
 package com.mrengineer13.contact_congress.settings;
 
+import android.Manifest;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.Preference;
@@ -24,6 +25,9 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 
 import io.realm.Realm;
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.OnPermissionDenied;
+import permissions.dispatcher.RuntimePermissions;
 import pl.charmas.android.reactivelocation.ReactiveLocationProvider;
 
 import static com.mrengineer13.contact_congress.utils.DialogUtils.hideLoadingDialog;
@@ -35,7 +39,7 @@ import static com.mrengineer13.contact_congress.utils.DialogUtils.showZipCodeErr
 /**
  * Created by Jon on 6/28/16.
  */
-
+@RuntimePermissions
 public class SettingsFragment extends RxSettingsFragment implements SharedPreferences.OnSharedPreferenceChangeListener, SettingsView {
     @Inject
     public ApiService api;
@@ -73,7 +77,7 @@ public class SettingsFragment extends RxSettingsFragment implements SharedPrefer
         findPreference("sync_zip_preference").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
-                presenter.getLocation();
+                SettingsFragmentPermissionsDispatcher.getLocationWithCheck(SettingsFragment.this);
                 return false;
             }
         });
@@ -112,6 +116,16 @@ public class SettingsFragment extends RxSettingsFragment implements SharedPrefer
         }
         Preference zip_preference = findPreference("zip_preference");
         zip_preference.setTitle(title);
+    }
+
+    @NeedsPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+    void getLocation() {
+        presenter.getLocation();
+    }
+
+    @OnPermissionDenied(Manifest.permission.ACCESS_FINE_LOCATION)
+    void showDeniedForLocation() {
+        showManuallyUpdateZipCodeDialog();
     }
 
     @Override
@@ -188,5 +202,11 @@ public class SettingsFragment extends RxSettingsFragment implements SharedPrefer
                         }
                     }
                 }).show();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        SettingsFragmentPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
     }
 }
