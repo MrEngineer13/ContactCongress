@@ -9,7 +9,6 @@ import javax.inject.Singleton;
 import dagger.Module;
 import dagger.Provides;
 import io.realm.Realm;
-import io.realm.RealmConfiguration;
 
 /**
  * Created by Jon on 6/28/16.
@@ -26,8 +25,7 @@ public class DataModule {
     @Provides
     @Singleton
     Realm provideRealm(Application app) {
-        RealmConfiguration realmConfig = new RealmConfiguration.Builder(app).build();
-        Realm.setDefaultConfiguration(realmConfig);
+        Realm.init(app);
         return Realm.getDefaultInstance();
     }
 }

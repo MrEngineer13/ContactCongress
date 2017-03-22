@@ -1,12 +1,17 @@
 package com.mrengineer13.contact_congress.settings;
 
+import android.Manifest;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.Preference;
+import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.view.View;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.mrengineer13.contact_congress.ContactCongress;
 import com.mrengineer13.contact_congress.R;
 import com.mrengineer13.contact_congress.base.RxSettingsFragment;
@@ -14,22 +19,27 @@ import com.mrengineer13.contact_congress.data.api.ApiService;
 import com.mrengineer13.contact_congress.utils.Keys;
 import com.mrengineer13.contact_congress.utils.Prefs;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.inject.Inject;
 
 import io.realm.Realm;
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.OnPermissionDenied;
+import permissions.dispatcher.RuntimePermissions;
 import pl.charmas.android.reactivelocation.ReactiveLocationProvider;
 
 import static com.mrengineer13.contact_congress.utils.DialogUtils.hideLoadingDialog;
 import static com.mrengineer13.contact_congress.utils.DialogUtils.showLoadingDialog;
 import static com.mrengineer13.contact_congress.utils.DialogUtils.showNetworkDialog;
 import static com.mrengineer13.contact_congress.utils.DialogUtils.showServerDialog;
-import static com.mrengineer13.contact_congress.utils.DialogUtils.showZipCodeDialog;
 import static com.mrengineer13.contact_congress.utils.DialogUtils.showZipCodeErrorDialog;
 
 /**
  * Created by Jon on 6/28/16.
  */
-
+@RuntimePermissions
 public class SettingsFragment extends RxSettingsFragment implements SharedPreferences.OnSharedPreferenceChangeListener, SettingsView {
     @Inject
     public ApiService api;
@@ -59,7 +69,7 @@ public class SettingsFragment extends RxSettingsFragment implements SharedPrefer
         findPreference("zip_preference").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
-                showZipCodeDialog(getActivity());
+                showManuallyUpdateZipCodeDialog();
                 return false;
             }
         });
@@ -67,7 +77,7 @@ public class SettingsFragment extends RxSettingsFragment implements SharedPrefer
         findPreference("sync_zip_preference").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
-                presenter.getLocation();
+                SettingsFragmentPermissionsDispatcher.getLocationWithCheck(SettingsFragment.this);
                 return false;
             }
         });
@@ -108,8 +118,27 @@ public class SettingsFragment extends RxSettingsFragment implements SharedPrefer
         zip_preference.setTitle(title);
     }
 
+    @NeedsPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+    void getLocation() {
+        presenter.getLocation();
+    }
+
+    @OnPermissionDenied(Manifest.permission.ACCESS_FINE_LOCATION)
+    void showDeniedForLocation() {
+        showManuallyUpdateZipCodeDialog();
+    }
+
     @Override
-    public void gotPostalCode(String postalCode) {
+    public void getLegislatorsForPostalCode() {
+        presenter.getLegislatorsFromZipCode();
+    }
+
+    @Override
+    public void gotLegislators() {
+    }
+
+    @Override
+    public void gotPostalCodeFromLocation(String postalCode) {
         if (getView() == null) {
             return;
         }
@@ -117,7 +146,7 @@ public class SettingsFragment extends RxSettingsFragment implements SharedPrefer
                 .setAction("Update", new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        showZipCodeDialog(getActivity());
+                        showManuallyUpdateZipCodeDialog();
                     }
                 }).show();
     }
@@ -145,5 +174,43 @@ public class SettingsFragment extends RxSettingsFragment implements SharedPrefer
     @Override
     public void showZipErrorDialog() {
         showZipCodeErrorDialog(getActivity());
+    }
+
+    private void showManuallyUpdateZipCodeDialog() {
+        new MaterialDialog.Builder(getActivity())
+                .title("Enter postal code Manually.")
+                .content("Please enter your postal code")
+                .alwaysCallInputCallback()
+                .inputType(InputType.TYPE_CLASS_NUMBER)
+                .inputRangeRes(5, 5, android.R.color.holo_red_light)
+                .autoDismiss(false)
+                .onAny(new MaterialDialog.SingleButtonCallback() {
+                    @Override
+                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                        if (which == DialogAction.POSITIVE) {
+                            String zip = dialog.getInputEditText().getText().toString();
+                            prefs.saveZip(zip);
+                            SettingsFragment.this.getLegislatorsForPostalCode();
+                            dialog.dismiss();
+                        }
+                    }
+                })
+                .input("", prefs.getZip(), new MaterialDialog.InputCallback() {
+                    @Override
+                    public void onInput(MaterialDialog dialog, CharSequence input) {
+                        dialog.getActionButton(DialogAction.POSITIVE).setEnabled(false);
+                        Pattern mPattern = Pattern.compile("\\d{5}?");
+                        Matcher matcher = mPattern.matcher(input.toString());
+                        if (matcher.matches()) {
+                            dialog.getActionButton(DialogAction.POSITIVE).setEnabled(true);
+                        }
+                    }
+                }).show();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        SettingsFragmentPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
     }
 }
