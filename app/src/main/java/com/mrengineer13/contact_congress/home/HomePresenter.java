@@ -28,10 +28,10 @@ import timber.log.Timber;
  */
 
 public class HomePresenter {
-    private HomeView view;
+    public HomeView view;
     private ApiService api;
     private Realm realm;
-    private Prefs prefs;
+    public Prefs prefs;
     private ReactiveLocationProvider locationProvider;
     private CompositeSubscription subscriptions;
 
@@ -52,7 +52,7 @@ public class HomePresenter {
                     @Override
                     public Observable<List<Address>> call(Location location) {
                         Timber.d("location" + location.getAccuracy());
-                        getLegislators(location);
+                        getLegislatorsFromLocation(location);
                         return locationProvider
                                 .getReverseGeocodeObservable(location.getLatitude(), location.getLongitude(), 1);
                     }
@@ -64,7 +64,7 @@ public class HomePresenter {
                     public void call(List<Address> addresses) {
                         String postalCode = addresses.get(0).getPostalCode();
                         prefs.saveZip(postalCode);
-                        view.gotPostalCode(postalCode);
+                        view.gotPostalCodeFromLocation(postalCode);
                     }
                 }, new Action1<Throwable>() {
                     @Override
@@ -78,29 +78,47 @@ public class HomePresenter {
         subscriptions.add(subscription);
     }
 
-    public void getLegislators(Location location) {
+    private void getLegislatorsFromLocation(Location location) {
         Subscription subscription = api.legislators(location.getLatitude(), location.getLongitude())
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new DataSubscription<LegislatorResults>(view, new DataSubscription.CompleteRequestCallback<LegislatorResults>() {
                     @Override
                     public void onSuccess(LegislatorResults legislatorResults) {
-                        for (final Legislator legislator : legislatorResults.legislators) {
-                            saveLegislators(legislator);
-                        }
+                        saveLegislators(legislatorResults);
                     }
                 }));
 
         subscriptions.add(subscription);
     }
 
-    private void saveLegislators(final Legislator legislator) {
-        realm.executeTransactionAsync(new Realm.Transaction() {
+    void getLegislatorsFromZipCode() {
+        String zipCode = prefs.getZip();
+        Subscription subscription = api.legislators(zipCode)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new DataSubscription<LegislatorResults>(view, new DataSubscription.CompleteRequestCallback<LegislatorResults>() {
+                    @Override
+                    public void onSuccess(LegislatorResults legislatorResults) {
+                        saveLegislators(legislatorResults);
+                    }
+                }));
+
+        subscriptions.add(subscription);
+    }
+
+    private void saveLegislators(LegislatorResults legislatorResults) {
+        realm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
-                realm.insertOrUpdate(legislator);
+                realm.deleteAll();
             }
         });
+        realm.beginTransaction();
+        for (final Legislator legislator : legislatorResults.legislators) {
+            realm.insertOrUpdate(legislator);
+        }
+        realm.commitTransaction();
     }
 
     public void onStop() {

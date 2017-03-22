@@ -8,7 +8,10 @@ import com.mrengineer13.contact_congress.data.api.DataStatusView;
 
 public interface HomeView extends DataStatusView {
 
-    public void gotPostalCode(String postalCode);
+    public void gotPostalCodeFromLocation(String postalCode);
 
     public void showZipErrorDialog();
+
+    public void getLegislatorsForPostalCode();
+
 }
