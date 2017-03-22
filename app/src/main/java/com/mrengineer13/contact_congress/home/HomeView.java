@@ -14,4 +14,6 @@ public interface HomeView extends DataStatusView {
 
     public void getLegislatorsForPostalCode();
 
+    public void gotLegislators();
+
 }

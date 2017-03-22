@@ -17,6 +17,7 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.mrengineer13.contact_congress.R;
 import com.mrengineer13.contact_congress.base.BaseActivity;
 import com.mrengineer13.contact_congress.data.models.events.LegislatorSearchEvent;
+import com.mrengineer13.contact_congress.data.models.events.UpdateLegislatorsEvent;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,6 +27,7 @@ import permissions.dispatcher.NeedsPermission;
 import permissions.dispatcher.OnPermissionDenied;
 import permissions.dispatcher.RuntimePermissions;
 import pl.charmas.android.reactivelocation.ReactiveLocationProvider;
+import timber.log.Timber;
 
 import static com.mrengineer13.contact_congress.utils.DialogUtils.showZipCodeErrorDialog;
 
@@ -84,6 +86,12 @@ public class HomeActivity extends BaseActivity implements SearchView.OnQueryText
     @Override
     public void getLegislatorsForPostalCode() {
         presenter.getLegislatorsFromZipCode();
+    }
+
+    @Override
+    public void gotLegislators() {
+        Timber.d("Send call");
+        bus.send(new UpdateLegislatorsEvent());
     }
 
     @Override

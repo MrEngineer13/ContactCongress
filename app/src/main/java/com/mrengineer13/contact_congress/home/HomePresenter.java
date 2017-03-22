@@ -119,6 +119,7 @@ public class HomePresenter {
             realm.insertOrUpdate(legislator);
         }
         realm.commitTransaction();
+        view.gotLegislators();
     }
 
     public void onStop() {

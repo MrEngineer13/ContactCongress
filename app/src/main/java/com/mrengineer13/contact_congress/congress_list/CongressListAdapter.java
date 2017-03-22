@@ -17,6 +17,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import de.hdodenhof.circleimageview.CircleImageView;
+import io.realm.RealmResults;
 
 /**
  * Created by Jon on 6/26/16.
@@ -24,7 +25,7 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 public class CongressListAdapter extends RecyclerView.Adapter<CongressListAdapter.ViewHolder> {
 
-    private List<Legislator> data;
+    private List<Legislator> legislators;
 
     private OnItemClickedListener listener;
 
@@ -36,9 +37,13 @@ public class CongressListAdapter extends RecyclerView.Adapter<CongressListAdapte
         void onEmailClicked(Legislator legislator);
     }
 
-    public CongressListAdapter(List<Legislator> data, OnItemClickedListener listener) {
-        this.data = data;
+    public CongressListAdapter(OnItemClickedListener listener) {
         this.listener = listener;
+    }
+
+    public void addLegislators(RealmResults<Legislator> legislators) {
+        this.legislators = legislators;
+        notifyDataSetChanged();
     }
 
     @Override
@@ -50,13 +55,13 @@ public class CongressListAdapter extends RecyclerView.Adapter<CongressListAdapte
 
     @Override
     public void onBindViewHolder(CongressListAdapter.ViewHolder holder, int position) {
-        Legislator legislator = data.get(position);
+        Legislator legislator = legislators.get(position);
         holder.bind(legislator, listener);
     }
 
     @Override
     public int getItemCount() {
-        return data.size();
+        return legislators.size();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {

@@ -134,6 +134,10 @@ public class SettingsFragment extends RxSettingsFragment implements SharedPrefer
     }
 
     @Override
+    public void gotLegislators() {
+    }
+
+    @Override
     public void gotPostalCodeFromLocation(String postalCode) {
         if (getView() == null) {
             return;
