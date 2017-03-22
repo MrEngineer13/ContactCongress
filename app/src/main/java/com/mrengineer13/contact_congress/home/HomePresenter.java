@@ -92,7 +92,7 @@ public class HomePresenter {
         subscriptions.add(subscription);
     }
 
-    void getLegislatorsFromZipCode() {
+    public void getLegislatorsFromZipCode() {
         String zipCode = prefs.getZip();
         Subscription subscription = api.legislators(zipCode)
                 .subscribeOn(Schedulers.newThread())
