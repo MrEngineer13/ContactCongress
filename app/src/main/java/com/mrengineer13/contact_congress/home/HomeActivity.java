@@ -103,7 +103,7 @@ public class HomeActivity extends BaseActivity implements SearchView.OnQueryText
 
     @Override
     public void getLegislatorsForPostalCode() {
-        presenter.getLegislators();
+        presenter.getLegislatorsFromZipCode();
     }
 
     @Override
